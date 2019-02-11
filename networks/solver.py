@@ -9,6 +9,7 @@ import pickle as pickle
 import numpy as np
 
 from networks import optim
+from tqdm import tqdm
 
 
 class Solver(object):
@@ -124,7 +125,7 @@ class Solver(object):
         self.update_rule = kwargs.pop('update_rule', 'sgd')
         self.optim_config = kwargs.pop('optim_config', {})
         self.lr_decay = kwargs.pop('lr_decay', 1.0)
-        self.batch_size = kwargs.pop('batch_size', 100)
+        self.batch_size = kwargs.pop('batch_size', 128)
         self.num_epochs = kwargs.pop('num_epochs', 10)
         self.num_train_samples = kwargs.pop('num_train_samples', 1000)
         self.num_val_samples = kwargs.pop('num_val_samples', None)
@@ -187,7 +188,8 @@ class Solver(object):
             dw = grads[p]
             config = self.optim_configs[p]
             next_w, next_config = self.update_rule(w, dw, config)
-            self.model.params[p] = next_w
+            w[self.model.training_mask[p]] = next_w[self.model.training_mask[p]]
+            self.model.params[p] = w
             self.optim_configs[p] = next_config
 
 
@@ -263,14 +265,14 @@ class Solver(object):
         iterations_per_epoch = max(num_train // self.batch_size, 1)
         num_iterations = self.num_epochs * iterations_per_epoch
 
-        for t in range(num_iterations):
+        for t in tqdm(range(num_iterations),ascii=True,desc='Training'):
             self._step()
             
 
             # Maybe print training loss
-            if self.verbose and t % self.print_every == 0:
-                print('(Iteration %d / %d) loss: %f' % (
-                       t + 1, num_iterations, self.loss_history[-1]))
+            #if self.verbose and t % self.print_every == 0:
+            #    print('(Iteration %d / %d) loss: %f' % (
+            #           t + 1, num_iterations, self.loss_history[-1]))
 
             # At the end of every epoch, increment the epoch counter and decay
             # the learning rate.
@@ -306,3 +308,4 @@ class Solver(object):
 
         # At the end of training swap the best params into the model
         self.model.params = self.best_params
+        self.model.update_parameters()
