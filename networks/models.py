@@ -136,17 +136,17 @@ class Model(object):
                     end = step * (e+1)
                 network_param[(e,'W%d'%(i+1))] = self.params['W%d'%(i+1)][start:end]
                 network_param[(e,'b%d'%(i+1))] = self.params['b%d'%(i+1)][start:end]
-                if (normalization is not None) & (i!=self.num_layers - 1):
+                if (self.normalization is not None) & (i!=self.num_layers - 1):
                     network_param[(e,'gamma%d'%(i+1))] = self.params['gamma%d'%(i+1)][start:end]
                     network_param[(e,'beta%d'%(i+1))] = self.params['beta%d'%(i+1)][start:end]
 
-        for n,j in enumerate(which_network):
+        for n,j in enumerate(self.which_network):
             for i in range(self.num_layers):
                 self.network_param[j][(n,'W%d'%(i+1))] = network_param[(n,'W%d'%(i+1))]
-                self.network_param['b%d'%(i+1)] = network_param[j][(n,'b%d'%(i+1))]
+                self.network_param[j][(n,'b%d'%(i+1))] = network_param[j][(n,'b%d'%(i+1))]
                 if (self.normalization is not None) & (i!=self.num_layers - 1):
-                    self.network_param['gamma%d'%(i+1)] = network_param[j][(n,'gamma%d'%(i+1))]
-                    self.network_param['beta%d'%(i+1)] = network_param[j][(n,'beta%d'%(i)+1)]
+                    self.network_param[j][(n,'gamma%d'%(i+1))] = network_param[j][(n,'gamma%d'%(i+1))]
+                    self.network_param[j][(n,'beta%d'%(i+1))] = network_param[j][(n,'beta%d'%(i)+1)]
 
 
 
