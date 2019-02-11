@@ -178,6 +178,40 @@ class Solver(object):
         batch_mask = np.random.choice(num_train, self.batch_size)
         X_batch = self.X_train[batch_mask]
         y_batch = self.y_train[batch_mask]
+        '''
+        define which network to use
+
+        |-` 1. calculate the sub_vector to reference point
+        |-` 2. define the network according to reference point
+        |-` 3. create which_network list
+        |-` 4. define_parameter
+        |-` 5. Train
+        '''
+        #Get sub_vector
+        ######################################################################
+        # Approach 1. Reference Points
+        ######################################################################
+        sub_vector = np.average(X_batch.reshape(X_batch.shape[0],-1),axis=0)
+        
+        which_network = []
+        for i in range(self.model.num_networks):
+            mask = self.model.reference_index==i
+            vector = sub_vector[mask]
+            dist = None
+            num = 0
+            
+            for n in range(self.model.sub_network):
+                cur_dist = np.linalg.norm(vector - self.model.reference_point[n][i])
+                if (dist is None) or (cur_dist < dist):
+                    dist = cur_dist
+                    num = n
+            which_network.append(num)
+        if which_network != self.model.which_network:
+            pass
+            #print(which_network)
+        trainable_mask = [1] * len(which_network)
+        self.model.define_parameters(which_network,trainable_mask=trainable_mask)
+        ######################################################################
 
         # Compute loss and gradient
         loss, grads = self.model.loss(X_batch, y_batch)
@@ -191,6 +225,7 @@ class Solver(object):
             w[self.model.training_mask[p]] = next_w[self.model.training_mask[p]]
             self.model.params[p] = w
             self.optim_configs[p] = next_config
+        self.model.update_parameters()
 
 
     def _save_checkpoint(self):
@@ -309,3 +344,4 @@ class Solver(object):
         # At the end of training swap the best params into the model
         self.model.params = self.best_params
         self.model.update_parameters()
+        self._save_checkpoint()
